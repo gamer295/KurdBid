@@ -1,0 +1,155 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information and status",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "isAdmin": { "type": "boolean" },
+        "isBanned": { "type": "boolean" },
+        "bannedUntil": { "type": "string", "format": "date-time" },
+        "bio": { "type": "string" },
+        "location": { "type": "string" },
+        "phone": { "type": "string" }
+      },
+      "required": ["uid", "displayName", "email"]
+    },
+    "Item": {
+      "title": "Item",
+      "description": "Marketplace item listing",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "imageUrls": { "type": "array", "items": { "type": "string" } },
+        "sellerId": { "type": "string" },
+        "sellerName": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "category": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "removed", "sold"] },
+        "isAuction": { "type": "boolean" },
+        "startingPrice": { "type": "number" },
+        "currentBid": { "type": "number" },
+        "bidCount": { "type": "number" },
+        "endsAt": { "type": "string", "format": "date-time" },
+        "highestBidderId": { "type": "string" },
+        "highestBidderName": { "type": "string" }
+      },
+      "required": ["title", "description", "price", "sellerId", "createdAt", "status"]
+    },
+    "Bid": {
+      "title": "Bid",
+      "description": "A bid placed on an auction item",
+      "type": "object",
+      "properties": {
+        "itemId": { "type": "string" },
+        "bidderId": { "type": "string" },
+        "bidderName": { "type": "string" },
+        "amount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["itemId", "bidderId", "amount", "createdAt"]
+    },
+    "Conversation": {
+      "title": "Conversation",
+      "description": "Chat thread between two users regarding an item",
+      "type": "object",
+      "properties": {
+        "participants": { "type": "array", "items": { "type": "string" } },
+        "lastMessage": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "itemId": { "type": "string" },
+        "itemTitle": { "type": "string" }
+      },
+      "required": ["participants", "updatedAt"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Individual chat message",
+      "type": "object",
+      "properties": {
+        "conversationId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "read": { "type": "boolean" }
+      },
+      "required": ["conversationId", "senderId", "text", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "User notifications for messages or activity",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["message", "sale"] },
+        "content": { "type": "string" },
+        "relatedId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "read": { "type": "boolean" }
+      },
+      "required": ["userId", "type", "content", "createdAt"]
+    },
+    "Ad": {
+      "title": "Ad",
+      "description": "Sponsored advertisement banner",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "link": { "type": "string" },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "description", "link", "active"]
+    },
+    "AppSetting": {
+      "title": "App Setting",
+      "description": "Global application configuration",
+      "type": "object",
+      "properties": {
+        "adsEnabled": { "type": "boolean" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/items/{itemId}": {
+      "schema": "Item",
+      "description": "Marketplace listings"
+    },
+    "/conversations/{conversationId}": {
+      "schema": "Conversation",
+      "description": "Shared chat conversations"
+    },
+    "/conversations/{conversationId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Messages within a conversation"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "User notifications"
+    },
+    "/ads/{adId}": {
+      "schema": "Ad",
+      "description": "Sponsored ads"
+    },
+    "/bids/{bidId}": {
+      "schema": "Bid",
+      "description": "Bids placed on items"
+    },
+    "/appConfig/global": {
+      "schema": "AppSetting",
+      "description": "Global app settings"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "KurdBid",
+  "description": "A robust, message-only marketplace platform for buying and selling items locally. Features include item listings, real-time messaging, robust search and filtering, and comprehensive user dashboards for sales and purchases.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ],
+  "majorCapabilities": []
+}

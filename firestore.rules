@@ -1,0 +1,133 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 0. Default Deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 0.3 Helper Functions
+    function isSignedIn() { 
+      return request.auth != null; 
+    }
+    
+    function isOwner(userId) { 
+      return isSignedIn() && request.auth.uid == userId; 
+    }
+    
+    // CASE INSENSITIVE Master Admin check
+    function isMasterAdmin() {
+      return isSignedIn() && 
+             request.auth.token.email != null && 
+             (request.auth.token.email == 'hazar.qader@gmail.com' || 
+              request.auth.token.email.lower() == 'hazar.qader@gmail.com');
+    }
+
+    // General Admin check (for bootstrapped admins)
+    function isAdmin() {
+      // Short-circuit with isMasterAdmin first to avoid get() call
+      return isMasterAdmin() || 
+             (isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true);
+    }
+
+    function isSuperAdmin() {
+      return isMasterAdmin() ||
+             (isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.adminRank == 'Super');
+    }
+
+    function isValidBid(data) {
+      return data.itemId is string &&
+             data.bidderId == request.auth.uid &&
+             data.amount is number &&
+             data.amount > 0;
+    }
+
+    // 1. Users Collection
+    match /users/{userId} {
+      // For list queries, we check resource.data to ensure querying is secure
+      allow list: if isSignedIn();
+      allow get: if true;
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isSuperAdmin();
+    }
+
+    // 2. Items Collection
+    match /items/{itemId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if (isSignedIn() && resource.data.sellerId == request.auth.uid) || 
+                      isAdmin() ||
+                      (
+                        isSignedIn() &&
+                        resource.data.isAuction == true &&
+                        resource.data.endsAt > request.time &&
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['currentBid', 'bidCount', 'highestBidderId', 'highestBidderName']) &&
+                        request.resource.data.currentBid > resource.data.currentBid &&
+                        request.resource.data.highestBidderId == request.auth.uid &&
+                        request.resource.data.bidCount == resource.data.bidCount + 1
+                      );
+      allow delete: if (isSignedIn() && resource.data.sellerId == request.auth.uid) || isAdmin();
+    }
+
+    // 3. Conversations Collection
+    match /conversations/{conversationId} {
+      // Reorder to ensure cheap isSignedIn check or resource check happens before expensive isAdmin()
+      allow read: if (isSignedIn() && request.auth.uid in resource.data.participants) || isAdmin(); 
+      allow create: if isSignedIn();
+      allow update: if (isSignedIn() && request.auth.uid in resource.data.participants) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // 4. Messages (Subcollection of Conversations)
+    match /conversations/{conversationId}/messages/{messageId} {
+      allow read, create: if isSignedIn(); 
+      allow update: if (isSignedIn() && get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants.hasAny([request.auth.uid])) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // 5. Notifications Collection
+    match /notifications/{notificationId} {
+      // Secure notifications to owner
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow write: if isSignedIn(); 
+    }
+
+    // 6. Reports Collection
+    match /reports/{reportId} {
+      // allow read: if isAdmin(); // Expensive in list queries
+      allow list: if isAdmin();
+      allow get: if isAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    // 7. Ads Collection
+    match /ads/{adId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 8. Bids Collection
+    match /bids/{bidId} {
+      allow read: if true;
+      allow create: if isSignedIn() && 
+                    isValidBid(request.resource.data) &&
+                    get(/databases/$(database)/documents/items/$(request.resource.data.itemId)).data.isAuction == true &&
+                    get(/databases/$(database)/documents/items/$(request.resource.data.itemId)).data.endsAt > request.time &&
+                    request.resource.data.amount > get(/databases/$(database)/documents/items/$(request.resource.data.itemId)).data.currentBid;
+    }
+
+    // 9. App Configuration
+    match /appConfig/global {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    // 9. Test Collection
+    match /test/{docId} {
+      allow read, write: if true;
+    }
+  }
+}

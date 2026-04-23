@@ -1,0 +1,17 @@
+{
+  "name": "KurdBid",
+  "short_name": "KurdBid",
+  "description": "Kurdish Marketplace Platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#FFD700",
+  "icons": [
+    {
+      "src": "https://picsum.photos/seed/kurdbid/512/512",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
