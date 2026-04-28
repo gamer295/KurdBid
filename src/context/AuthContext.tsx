@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { onAuthStateChanged, User, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc, setDoc, onSnapshot, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 
@@ -23,6 +23,8 @@ interface AuthContextType {
   loading: boolean;
   isAdmin: boolean;
   signOut: () => Promise<void>;
+  signUpWithEmail: (email: string, password: string) => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
 }
 
@@ -32,6 +34,8 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   isAdmin: false,
   signOut: async () => {},
+  signUpWithEmail: async () => {},
+  signInWithEmail: async () => {},
   updateProfile: async () => {},
 });
 
@@ -129,6 +133,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = () => auth.signOut();
 
+  const signUpWithEmail = async (email: string, password: string) => {
+    await createUserWithEmailAndPassword(auth, email, password);
+  };
+
+  const signInWithEmail = async (email: string, password: string) => {
+    await signInWithEmailAndPassword(auth, email, password);
+  };
+
   const updateProfile = async (data: Partial<UserProfile>) => {
     if (!user) return;
     const userDocRef = doc(db, 'users', user.uid);
@@ -138,7 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, isAdmin, signOut, updateProfile }}>
+    <AuthContext.Provider value={{ user, profile, loading, isAdmin, signOut, signUpWithEmail, signInWithEmail, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

@@ -189,6 +189,16 @@ const translations: Translations = {
   featured: { ku: 'پێشنیارکراو', en: 'Featured' },
   selectLanguage: { ku: 'زمان', en: 'Language' },
 
+  // Auth Extras
+  email: { ku: 'ئیمەیڵ', en: 'Email' },
+  password: { ku: 'تێپەڕەوشە', en: 'Password' },
+  signUp: { ku: 'تۆمارکردن', en: 'Sign Up' },
+  loginAction: { ku: 'چوونەژوورەوە', en: 'Login' },
+  dontHaveAccount: { ku: 'هەژمارت نییە؟', en: "Don't have an account?" },
+  alreadyHaveAccount: { ku: 'پێشتر هەژمارت تۆمارکردووە؟', en: 'Already have an account?' },
+  invalidEmail: { ku: 'ئیمەیڵەکەت نادروستە', en: 'Invalid email' },
+  passwordTooShort: { ku: 'تێپەڕەوشە دەبێت لانی کەم ٦ پیت بێت', en: 'Password must be at least 6 characters' },
+
   // Bidding System
   liveAuction: { ku: 'زیادکردنی ئاشکرا', en: 'Live Auction' },
   currentBid: { ku: 'گرەوی ئێستا', en: 'Current Bid' },
