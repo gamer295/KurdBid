@@ -198,6 +198,10 @@ const translations: Translations = {
   alreadyHaveAccount: { ku: 'پێشتر هەژمارت تۆمارکردووە؟', en: 'Already have an account?' },
   invalidEmail: { ku: 'ئیمەیڵەکەت نادروستە', en: 'Invalid email' },
   passwordTooShort: { ku: 'تێپەڕەوشە دەبێت لانی کەم ٦ پیت بێت', en: 'Password must be at least 6 characters' },
+  forgotPassword: { ku: 'تێپەڕەوشەت بیرچووە؟', en: 'Forgot password?' },
+  resetPassword: { ku: 'بەستەری گۆڕین بنێرە', en: 'Send Reset Link' },
+  resetEmailSent: { ku: 'بەستەری گۆڕینی تێپەڕەوشە نێردرا، ئیمەیڵەکەت بپشکنە', en: 'Reset link sent! Check your email' },
+  backToLogin: { ku: 'بگەڕەوە بۆ چوونەژوورەوە', en: 'Back to Login' },
 
   // Bidding System
   liveAuction: { ku: 'زیادکردنی ئاشکرا', en: 'Live Auction' },
