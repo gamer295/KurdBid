@@ -62,11 +62,8 @@ const AdBanner: React.FC = () => {
   const isCurrentlyVideo = currentAd?.mediaType === 'video' || currentAd?.videoUrl;
 
   const handleNext = () => {
-    setAds(prev => {
-      if (prev.length <= 1) return prev;
-      setCurrentIndex((curr) => (curr + 1) % prev.length);
-      return prev;
-    });
+    if (ads.length <= 1) return;
+    setCurrentIndex((curr) => (curr + 1) % ads.length);
   };
 
   const renderMedia = (ad: any) => {

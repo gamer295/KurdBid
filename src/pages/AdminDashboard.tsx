@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { db } from '../lib/firebase';
 import { collection, query, onSnapshot, updateDoc, doc, limit, getDocs, deleteDoc, orderBy, addDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { 
@@ -33,8 +34,18 @@ const AdminDashboard: React.FC = () => {
   const [userSearch, setUserSearch] = useState('');
   const [itemSearch, setItemSearch] = useState('');
   const { t, isRTL } = useLanguage();
+  const { isAdmin: isAuthAdmin, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
+    if (!authLoading && !isAuthAdmin) {
+      navigate('/');
+    }
+  }, [authLoading, isAuthAdmin, navigate]);
+
+  useEffect(() => {
+    if (authLoading || !isAuthAdmin) return;
+
     // Fetch Users
     const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
       setUsers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));

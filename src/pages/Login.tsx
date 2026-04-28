@@ -45,7 +45,7 @@ const Login: React.FC = () => {
           onClick={handleGoogleLogin}
           className="w-full flex items-center justify-center gap-4 bg-white border border-border-polish py-4 rounded-xl font-bold hover:bg-bg-polish transition shadow-sm text-sm uppercase tracking-wider group"
         >
-          <img src="https://lh3.googleusercontent.com/COxitUu9qwDXp6Y-90qS8S953Y99-9m8Y653XpNoat6u1N_1t1n7_59yhOOKv2-9rR4" alt="Google" className="w-5 h-5 group-hover:scale-110 transition-all" />
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5 group-hover:scale-110 transition-all" />
           {t('signInGoogle')}
         </button>
 

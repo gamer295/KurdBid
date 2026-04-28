@@ -75,7 +75,7 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
                 className="w-8 h-8 rounded-full bg-border-polish overflow-hidden border border-border-polish cursor-pointer hover:border-primary transition-colors"
              >
                 {(user.photoURL && user.photoURL.length > 0) ? (
-                  <img src={user.photoURL} alt="" className="w-full h-full object-cover" />
+                  <img src={user.photoURL} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-xs text-text-light font-bold">
                     {user.displayName?.charAt(0)}
