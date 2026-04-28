@@ -1,7 +1,18 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, User, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { 
+  onAuthStateChanged, 
+  User, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  sendPasswordResetEmail,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  GoogleAuthProvider
+} from 'firebase/auth';
 import { doc, getDoc, setDoc, onSnapshot, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { auth, db } from '../lib/firebase';
+import { auth, db, googleProvider } from '../lib/firebase';
+import { Capacitor } from '@capacitor/core';
 
 interface UserProfile {
   uid: string;
@@ -136,11 +147,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = () => auth.signOut();
 
   const signUpWithEmail = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password);
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+    } catch (error: any) {
+      if (error.code === 'auth/operation-not-allowed') {
+        throw new Error("Email/Password is not enabled in Firebase Console. Please go to Auth > Sign-in method and enable 'Email/Password' (not Email Link).");
+      }
+      throw error;
+    }
   };
 
   const signInWithEmail = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error: any) {
+      if (error.code === 'auth/operation-not-allowed') {
+        throw new Error("Email/Password is not enabled in Firebase Console. Please go to Auth > Sign-in method and enable 'Email/Password' (not Email Link).");
+      }
+      throw error;
+    }
   };
 
   const resetPassword = async (email: string) => {

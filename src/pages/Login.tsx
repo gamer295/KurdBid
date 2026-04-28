@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { signInWithPopup } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect } from 'firebase/auth';
 import { auth, googleProvider } from '../lib/firebase';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LogIn, Mail, Lock, UserPlus } from 'lucide-react';
@@ -24,10 +24,21 @@ const Login: React.FC = () => {
 
   const handleGoogleLogin = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
-      navigate(from, { replace: true });
-    } catch (error) {
-      console.error("Login failed", error);
+      const isApp = window.location.origin.includes('localhost') || window.location.origin.includes('capacitor');
+      
+      if (isApp) {
+        await signInWithRedirect(auth, googleProvider);
+      } else {
+        await signInWithPopup(auth, googleProvider);
+        navigate(from, { replace: true });
+      }
+    } catch (err: any) {
+      console.error(err);
+      if (err.code === 'auth/operation-not-allowed') {
+        setError("Google Login is not enabled in Firebase Console. Go to Auth > Sign-in method and enable 'Google'.");
+      } else {
+        setError(err.message || t('errorOccurred'));
+      }
     }
   };
 
