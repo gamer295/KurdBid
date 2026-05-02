@@ -111,6 +111,15 @@ const translations: Translations = {
   noConversations: { ku: 'هیچ گفتوگۆیەک نییە', en: 'No conversations' },
   talkToAi: { ku: 'قسەکردن لەگەڵ زیرەکی دەستکرد', en: 'Talk to AI' },
   recording: { ku: 'خەریکی تۆمارکردنە...', en: 'Recording...' },
+  
+  // Navigation Short (for bottom nav)
+  homeShort: { ku: 'سەرەتا', en: 'Home' },
+  messagesShort: { ku: 'نامەکان', en: 'Messages' },
+  postShort: { ku: 'بڵاوکردنەوە', en: 'Post' },
+  purchasesShort: { ku: 'کڕینەکان', en: 'Purchases' },
+  settingsShort: { ku: 'هەژمار', en: 'Account' },
+  adminShort: { ku: 'ئادمین', en: 'Admin' },
+  
   releaseToStop: { ku: 'دەست هەڵبگرە بۆ وەستان', en: 'Release to stop' },
   voiceMessageReady: { ku: 'پەیامێکی دەنگی ئامادەیە', en: 'Voice Message Ready' },
   clickSendToDeliver: { ku: 'کرتە لە ناردن بکە بۆ گەیاندن', en: 'Click send to deliver' },

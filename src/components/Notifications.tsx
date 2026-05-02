@@ -8,7 +8,11 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 
-const Notifications: React.FC = () => {
+interface NotificationsProps {
+  isBottomNavVisible: boolean;
+}
+
+const Notifications: React.FC<NotificationsProps> = ({ isBottomNavVisible }) => {
   const { user } = useAuth();
   const { t, isRTL } = useLanguage();
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -53,16 +57,19 @@ const Notifications: React.FC = () => {
   if (!user) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100]">
+    <div className={cn(
+      "fixed z-[100] transition-all duration-300 right-6",
+      isBottomNavVisible ? "bottom-20 md:bottom-6" : "bottom-6"
+    )}>
       <div className="relative">
         <button
           onClick={() => setShowDropdown(!showDropdown)}
           className={cn(
-            "p-4 rounded-full shadow-2xl transition-all relative group",
+            "p-3 md:p-4 rounded-full shadow-2xl transition-all relative group",
             notifications.length > 0 ? "bg-primary text-white" : "bg-white text-text-light border border-border-polish"
           )}
         >
-          <Bell className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+          <Bell className="w-5 h-5 md:w-6 h-6 group-hover:rotate-12 transition-transform" />
           {notifications.length > 0 && (
             <span className="absolute top-0 right-0 w-5 h-5 bg-danger border-2 border-white rounded-full text-[10px] font-bold flex items-center justify-center">
               {notifications.length}

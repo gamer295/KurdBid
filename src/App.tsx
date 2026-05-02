@@ -16,6 +16,7 @@ import Notifications from './components/Notifications';
 import BottomNav from './components/BottomNav';
 
 import { useLanguage } from './context/LanguageContext';
+import { cn } from './lib/utils';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean }> = ({ children, adminOnly }) => {
   const { user, profile, loading, isAdmin } = useAuth();
@@ -38,16 +39,22 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean 
 
 function AppRoutes() {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+  const [isBottomNavVisible, setIsBottomNavVisible] = React.useState(true);
 
   return (
-    <div className="min-h-screen flex bg-bg-polish overflow-hidden relative">
+    <div className="min-h-screen bg-bg-polish flex flex-col md:flex-row relative overflow-hidden">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         <TopHeader onMenuClick={() => setIsSidebarOpen(true)} />
-        <Notifications />
-        <div className="flex flex-1 overflow-hidden">
-          <main className="flex-1 overflow-y-auto">
-            <div className="p-4 md:p-[30px] max-w-7xl mx-auto pb-24 lg:pb-[30px]">
+        <Notifications isBottomNavVisible={isBottomNavVisible} />
+        
+        <div className="flex-1 flex overflow-hidden relative">
+          <main className="flex-1 overflow-y-auto w-full">
+            <div className={cn(
+              "p-4 md:p-[30px] max-w-7xl mx-auto lg:pb-8 transition-all duration-300",
+              isBottomNavVisible ? "pb-28" : "pb-8"
+            )}>
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/item/:id" element={<ItemPage />} />
@@ -95,7 +102,8 @@ function AppRoutes() {
             </div>
           </main>
         </div>
-        <BottomNav />
+        
+        <BottomNav isVisible={isBottomNavVisible} onToggle={setIsBottomNavVisible} />
       </div>
     </div>
   );
