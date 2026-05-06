@@ -17,7 +17,9 @@ import {
   Gavel,
   Clock,
   TrendingUp,
-  History
+  History,
+  UserPlus,
+  UserCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReportModal from '../components/ReportModal';
@@ -55,7 +57,7 @@ const ItemPage: React.FC = () => {
   const [bidAmount, setBidAmount] = useState<string>('');
   const [biddingLoading, setBiddingLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState<string>('');
-  const { user, profile } = useAuth();
+  const { user, profile, isFollowing, followUser, unfollowUser } = useAuth();
   const { t, isRTL } = useLanguage();
   const navigate = useNavigate();
 
@@ -384,10 +386,14 @@ const ItemPage: React.FC = () => {
           <AdBanner />
 
           <div className="space-y-4 border-t pt-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-border-polish flex items-center justify-center text-text-light font-bold">
-                  {item.sellerName?.[0]}
+                <div className="w-12 h-12 rounded-full bg-[#ebecf0] border border-border-polish flex items-center justify-center text-text-light font-bold overflow-hidden shadow-sm">
+                  {sellerProfile?.photoURL ? (
+                    <img src={sellerProfile.photoURL} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    item.sellerName?.[0]
+                  )}
                 </div>
                 <div>
                   <p className="font-bold text-text-dark">{item.sellerName}</p>
@@ -397,6 +403,30 @@ const ItemPage: React.FC = () => {
                   </p>
                 </div>
               </div>
+
+              {user && user.uid !== item.sellerId && (
+                <button
+                  onClick={() => isFollowing(item.sellerId) ? unfollowUser(item.sellerId) : followUser(item.sellerId)}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95",
+                    isFollowing(item.sellerId)
+                      ? "bg-gray-100 text-text-light border border-border-polish"
+                      : "bg-primary text-black"
+                  )}
+                >
+                  {isFollowing(item.sellerId) ? (
+                    <>
+                      <UserCheck className="w-3.5 h-3.5" />
+                      {t('following')}
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="w-3.5 h-3.5" />
+                      {t('follow')}
+                    </>
+                  )}
+                </button>
+              )}
             </div>
 
             {user?.uid === item.sellerId ? (

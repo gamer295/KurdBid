@@ -3,7 +3,7 @@ import { db } from '../lib/firebase';
 import { collection, query, where, onSnapshot, orderBy, limit, updateDoc, doc } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { Bell, MessageSquare, Tag, X } from 'lucide-react';
+import { Bell, MessageSquare, Tag, X, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -52,6 +52,7 @@ const Notifications: React.FC<NotificationsProps> = ({ isBottomNavVisible }) => 
     } else if (notif.type === 'sale') {
       navigate('/my-sales');
     }
+    // For follow, just clearing it is fine for now
   };
 
   if (!user) return null;
@@ -98,7 +99,13 @@ const Notifications: React.FC<NotificationsProps> = ({ isBottomNavVisible }) => 
                       className="w-full p-4 hover:bg-indigo-50 transition-colors text-left flex gap-3 items-start"
                     >
                       <div className="mt-1">
-                        {notif.type === 'message' ? <MessageSquare className="w-4 h-4 text-indigo-500" /> : <Tag className="w-4 h-4 text-green-500" />}
+                        {notif.type === 'message' ? (
+                          <MessageSquare className="w-4 h-4 text-indigo-500" />
+                        ) : notif.type === 'follow' ? (
+                          <User className="w-4 h-4 text-primary" />
+                        ) : (
+                          <Tag className="w-4 h-4 text-green-500" />
+                        )}
                       </div>
                       <div>
                         <p className={cn("text-sm text-gray-800 line-clamp-2", isRTL && "text-right")}>{notif.content}</p>

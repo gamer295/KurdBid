@@ -230,7 +230,19 @@ const translations: Translations = {
   higherBidRequired: { ku: 'دەبێت گرەوەکەت بەرزتر بێت لە {n}', en: 'Your bid must be higher than {n}' },
   confirmBid: { ku: 'دڵنیای لەم گرەوە؟', en: 'Confirm your bid?' },
   bidSuccess: { ku: 'گرەوەکەت بە سەرکەوتوویی تومارکرا', en: 'Bid placed successfully' },
+  
+  // Follow System
+  following: { ku: 'فۆڵۆوینگ', en: 'Following' },
+  followers: { ku: 'فۆڵۆوەرز', en: 'Followers' },
+  follow: { ku: 'فۆڵۆ بکە', en: 'Follow' },
+  unfollow: { ku: 'فۆڵۆ مەکە', en: 'Unfollow' },
+  followSuccess: { ku: 'بە سەرکەوتوویی فۆڵۆ کرا', en: 'Followed successfully' },
+  unfollowSuccess: { ku: 'لە فۆڵۆ لادرا', en: 'Unfollowed' },
+  changePhoto: { ku: 'گۆڕینی وێنە', en: 'Change Photo' },
+  photoUrlPlaceholder: { ku: 'لینکی وێنە لێرە دابنێ', en: 'Paste photo URL here' },
+  uploadPhoto: { ku: 'وێنە دابنێ', en: 'Upload Photo' },
 };
+
 
 interface LanguageContextType {
   language: Language;

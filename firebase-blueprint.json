@@ -14,9 +14,22 @@
         "bannedUntil": { "type": "string", "format": "date-time" },
         "bio": { "type": "string" },
         "location": { "type": "string" },
-        "phone": { "type": "string" }
+        "phone": { "type": "string" },
+        "followingCount": { "type": "number" },
+        "followersCount": { "type": "number" }
       },
       "required": ["uid", "displayName", "email"]
+    },
+    "Follow": {
+      "title": "Follow",
+      "description": "User following relationship",
+      "type": "object",
+      "properties": {
+        "followerId": { "type": "string" },
+        "followingId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["followerId", "followingId", "createdAt"]
     },
     "Item": {
       "title": "Item",
@@ -150,6 +163,11 @@
     "/appConfig/global": {
       "schema": "AppSetting",
       "description": "Global app settings"
+    },
+    "/follows/{followId}": {
+      "schema": "Follow",
+      "description": "User following relationships"
     }
   }
 }
+

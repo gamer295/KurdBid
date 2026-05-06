@@ -15,8 +15,10 @@ const Profile: React.FC = () => {
     displayName: '',
     bio: '',
     location: '',
-    phone: ''
+    phone: '',
+    photoURL: ''
   });
+  const [isEditingPhoto, setIsEditingPhoto] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +29,8 @@ const Profile: React.FC = () => {
         displayName: profile.displayName || '',
         bio: profile.bio || '',
         location: profile.location || '',
-        phone: profile.phone || ''
+        phone: profile.phone || '',
+        photoURL: profile.photoURL || ''
       });
     }
   }, [profile]);
@@ -87,23 +90,76 @@ const Profile: React.FC = () => {
 
       <div className="card-polish p-8 bg-white">
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="flex items-center gap-6 mb-8 pb-8 border-b border-border-polish">
-            <div className="w-20 h-20 rounded-full bg-[#ebecf0] border border-border-polish flex items-center justify-center text-3xl text-text-light font-bold overflow-hidden">
-              {(profile.photoURL && profile.photoURL.length > 0) ? (
-                <img src={profile.photoURL} alt="" className="w-full h-full object-cover" />
-              ) : (
-                profile.displayName?.charAt(0)
-              )}
+          <div className="flex items-center gap-6 mb-8 pb-8 border-b border-border-polish relative">
+            <div className="relative group">
+              <div className="w-20 h-20 rounded-full bg-[#ebecf0] border border-border-polish flex items-center justify-center text-3xl text-text-light font-bold overflow-hidden shadow-inner">
+                {(formData.photoURL && formData.photoURL.length > 0) ? (
+                  <img src={formData.photoURL} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  profile.displayName?.charAt(0)
+                )}
+              </div>
+              <button 
+                type="button"
+                onClick={() => setIsEditingPhoto(!isEditingPhoto)}
+                className="absolute -bottom-1 -right-1 bg-primary text-black p-1.5 rounded-full shadow-lg border border-white hover:scale-110 transition-transform"
+              >
+                <Save className="w-3.5 h-3.5" />
+              </button>
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-text-dark">{profile.displayName}</h2>
+            
+            <div className="flex-1">
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-bold text-text-dark">{profile.displayName}</h2>
+                {profile.isAdmin && (
+                  <span className="bg-admin-bg text-admin-text px-2 py-0.5 rounded-[4px] border border-admin-border text-[10px] font-bold uppercase">
+                    {t('admin')}
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-text-light">{profile.email}</p>
-              {profile.isAdmin && (
-                <span className="mt-2 inline-block bg-admin-bg text-admin-text px-2 py-0.5 rounded-[4px] border border-admin-border text-[10px] font-bold uppercase">
-                  {t('admin')}
-                </span>
-              )}
+              
+              <div className="flex items-center gap-4 mt-2">
+                <div className="text-center">
+                  <p className="text-xs font-black text-text-dark">{profile.followersCount || 0}</p>
+                  <p className="text-[10px] font-bold text-text-light uppercase tracking-tighter">{t('followers')}</p>
+                </div>
+                <div className="w-px h-6 bg-border-polish" />
+                <div className="text-center">
+                  <p className="text-xs font-black text-text-dark">{profile.followingCount || 0}</p>
+                  <p className="text-[10px] font-bold text-text-light uppercase tracking-tighter">{t('following')}</p>
+                </div>
+              </div>
             </div>
+
+            <AnimatePresence>
+              {isEditingPhoto && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute top-full left-0 right-0 z-10 mt-2 p-4 bg-white border border-border-polish shadow-xl rounded-xl space-y-3"
+                >
+                  <label className="text-[10px] font-black text-text-light uppercase tracking-widest block">{t('changePhoto')}</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text"
+                      value={formData.photoURL}
+                      onChange={(e) => setFormData({ ...formData, photoURL: e.target.value })}
+                      placeholder={t('photoUrlPlaceholder')}
+                      className="flex-1 p-2 text-xs border border-border-polish rounded bg-gray-50 outline-none focus:ring-1 focus:ring-primary"
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setIsEditingPhoto(false)}
+                      className="bg-primary text-black px-3 py-1 text-xs font-bold rounded"
+                    >
+                      {t('close')}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           <div className="grid grid-cols-1 gap-6">

@@ -6,7 +6,7 @@ import {
   signInWithEmailAndPassword, 
   sendPasswordResetEmail,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, onSnapshot, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot, updateDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { Capacitor } from '@capacitor/core';
 
@@ -22,6 +22,8 @@ interface UserProfile {
   bio?: string;
   location?: string;
   phone?: string;
+  followingCount?: number;
+  followersCount?: number;
 }
 
 interface AuthContextType {
@@ -34,6 +36,9 @@ interface AuthContextType {
   signInWithEmail: (email: string, password: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
+  followUser: (sellerId: string) => Promise<void>;
+  unfollowUser: (sellerId: string) => Promise<void>;
+  isFollowing: (sellerId: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -46,7 +51,11 @@ const AuthContext = createContext<AuthContextType>({
   signInWithEmail: async () => {},
   resetPassword: async () => {},
   updateProfile: async () => {},
+  followUser: async () => {},
+  unfollowUser: async () => {},
+  isFollowing: () => false,
 });
+
 
 export const useAuth = () => useContext(AuthContext);
 
@@ -54,6 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [followingIds, setFollowingIds] = useState<string[]>([]);
 
   const [isAdmin, setIsAdmin] = useState(false);
   const adminPromoAttempted = React.useRef(false);
@@ -66,6 +76,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (user.email?.toLowerCase() === 'hazar.qader@gmail.com') {
           setIsAdmin(true);
         }
+
+        // Listen to following
+        const followsQuery = query(collection(db, 'follows'), where('followerId', '==', user.uid));
+        const unsubscribeFollows = onSnapshot(followsQuery, (snapshot) => {
+          setFollowingIds(snapshot.docs.map(doc => doc.data().followingId));
+        });
 
         // Handle User Profile and Admin check
         const userDocRef = doc(db, 'users', user.uid);
@@ -128,11 +144,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const unsubPromise = initialFetch();
         
         return () => {
-          unsubPromise.then(unsub => unsub());
+          unsubscribeFollows();
+          unsubPromise.then(unsub => unsub?.());
         };
       } else {
         setProfile(null);
         setIsAdmin(false);
+        setFollowingIds([]);
         setLoading(false);
       }
     });
@@ -172,12 +190,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     const userDocRef = doc(db, 'users', user.uid);
     // Remove internal fields that shouldn't be updated by user
-    const { isAdmin, isBanned, bannedUntil, uid, email, ...updatableData } = data as any;
+    const { isAdmin, isBanned, bannedUntil, uid, email, followersCount, followingCount, ...updatableData } = data as any;
     await setDoc(userDocRef, updatableData, { merge: true });
   };
 
+  const isFollowing = (sellerId: string) => followingIds.includes(sellerId);
+
+  const followUser = async (sellerId: string) => {
+    if (!user || user.uid === sellerId) return;
+    const followId = `${user.uid}_${sellerId}`;
+    await setDoc(doc(db, 'follows', followId), {
+      followerId: user.uid,
+      followingId: sellerId,
+      createdAt: new Date().toISOString()
+    });
+
+    // Send notification
+    await addDoc(collection(db, 'notifications'), {
+      userId: sellerId,
+      type: 'follow',
+      content: profile?.displayName 
+        ? `${profile.displayName} started following you!` 
+        : 'Someone started following you!',
+      relatedId: user.uid,
+      createdAt: new Date().toISOString(),
+      read: false
+    });
+  };
+
+  const unfollowUser = async (sellerId: string) => {
+    if (!user) return;
+    const followId = `${user.uid}_${sellerId}`;
+    const followDoc = doc(db, 'follows', followId);
+    await deleteDoc(followDoc);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, profile, loading, isAdmin, signOut, signUpWithEmail, signInWithEmail, resetPassword, updateProfile }}>
+    <AuthContext.Provider value={{ 
+      user, profile, loading, isAdmin, signOut, signUpWithEmail, signInWithEmail, resetPassword, 
+      updateProfile, followUser, unfollowUser, isFollowing 
+    }}>
       {children}
     </AuthContext.Provider>
   );
