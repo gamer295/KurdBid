@@ -6,7 +6,7 @@ import {
   signInWithEmailAndPassword, 
   sendPasswordResetEmail,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, onSnapshot, updateDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot, updateDoc, collection, query, where, getDocs, deleteDoc, addDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { Capacitor } from '@capacitor/core';
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { User, MapPin, Phone, TextQuote, Save, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { User, MapPin, Phone, TextQuote, Save, CheckCircle2, ShieldAlert, Upload, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { db } from '../lib/firebase';
@@ -19,6 +19,7 @@ const Profile: React.FC = () => {
     photoURL: ''
   });
   const [isEditingPhoto, setIsEditingPhoto] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,6 +64,52 @@ const Profile: React.FC = () => {
     }
   };
 
+  const handleFileChange = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setError(t('ku') === 'ku' ? 'تەنها وێنە ڕێگەپێدراوە' : 'Only images are allowed');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setError(t('ku') === 'ku' ? 'وێنەکە بێجگە لە ٢ مێگابایت بێت' : 'Image must be smaller than 2MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData({ ...formData, photoURL: reader.result as string });
+      setIsEditingPhoto(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const onDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const onDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFileChange(file);
+  };
+
+  const handleProfileClick = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) handleFileChange(file);
+    };
+    input.click();
+  };
+
   if (!profile) return null;
 
   return (
@@ -91,20 +138,44 @@ const Profile: React.FC = () => {
       <div className="card-polish p-8 bg-white">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="flex items-center gap-6 mb-8 pb-8 border-b border-border-polish relative">
-            <div className="relative group">
-              <div className="w-20 h-20 rounded-full bg-[#ebecf0] border border-border-polish flex items-center justify-center text-3xl text-text-light font-bold overflow-hidden shadow-inner">
+            <div 
+              className={cn(
+                "relative group cursor-pointer transition-all duration-300",
+                isDragging && "scale-110"
+              )}
+              onDragOver={onDragOver}
+              onDragLeave={onDragLeave}
+              onDrop={onDrop}
+              onClick={handleProfileClick}
+            >
+              <div className={cn(
+                "w-20 h-20 rounded-full border-2 flex items-center justify-center text-3xl font-bold overflow-hidden shadow-inner transition-all",
+                isDragging 
+                  ? "bg-primary/20 border-primary border-dashed" 
+                  : "bg-[#ebecf0] border-border-polish"
+              )}>
                 {(formData.photoURL && formData.photoURL.length > 0) ? (
                   <img src={formData.photoURL} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  profile.displayName?.charAt(0)
+                  isDragging ? <Upload className="w-8 h-8 text-primary animate-bounce" /> : profile.displayName?.charAt(0)
                 )}
+                
+                {/* Hover Overlay */}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-[10px] text-white transition-opacity font-bold uppercase tracking-tighter">
+                  <Upload className="w-4 h-4 mb-0.5" />
+                  {t('uploadPhoto')}
+                </div>
               </div>
+              
               <button 
                 type="button"
-                onClick={() => setIsEditingPhoto(!isEditingPhoto)}
-                className="absolute -bottom-1 -right-1 bg-primary text-black p-1.5 rounded-full shadow-lg border border-white hover:scale-110 transition-transform"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsEditingPhoto(!isEditingPhoto);
+                }}
+                className="absolute -bottom-1 -right-1 bg-primary text-black p-1.5 rounded-full shadow-lg border border-white hover:scale-110 transition-transform z-20"
               >
-                <Save className="w-3.5 h-3.5" />
+                <ImageIcon className="w-3.5 h-3.5" />
               </button>
             </div>
             
