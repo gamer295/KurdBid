@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { User, MapPin, Phone, TextQuote, Save, CheckCircle2, ShieldAlert, Upload, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
+import { useDropzone } from 'react-dropzone';
 
 import { useLanguage } from '../context/LanguageContext';
 
@@ -19,7 +20,6 @@ const Profile: React.FC = () => {
     photoURL: ''
   });
   const [isEditingPhoto, setIsEditingPhoto] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +35,32 @@ const Profile: React.FC = () => {
       });
     }
   }, [profile]);
+
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      setError(t('ku') === 'ku' ? 'وێنەکە بێجگە لە ٢ مێگابایت بێت' : 'Image must be smaller than 2MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData(prev => ({ ...prev, photoURL: reader.result as string }));
+      setIsEditingPhoto(true);
+      setError(null);
+    };
+    reader.readAsDataURL(file);
+  }, [t]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'image/*': ['.jpeg', '.jpg', '.png', '.webp']
+    },
+    multiple: false
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,52 +88,6 @@ const Profile: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleFileChange = (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      setError(t('ku') === 'ku' ? 'تەنها وێنە ڕێگەپێدراوە' : 'Only images are allowed');
-      return;
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      setError(t('ku') === 'ku' ? 'وێنەکە بێجگە لە ٢ مێگابایت بێت' : 'Image must be smaller than 2MB');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFormData({ ...formData, photoURL: reader.result as string });
-      setIsEditingPhoto(true);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const onDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const onDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const onDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleFileChange(file);
-  };
-
-  const handleProfileClick = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) handleFileChange(file);
-    };
-    input.click();
   };
 
   if (!profile) return null;
@@ -139,29 +119,27 @@ const Profile: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="flex items-center gap-6 mb-8 pb-8 border-b border-border-polish relative">
             <div 
+              {...getRootProps()}
               className={cn(
                 "relative group cursor-pointer transition-all duration-300",
-                isDragging && "scale-110"
+                isDragActive && "scale-110"
               )}
-              onDragOver={onDragOver}
-              onDragLeave={onDragLeave}
-              onDrop={onDrop}
-              onClick={handleProfileClick}
             >
+              <input {...getInputProps()} />
               <div className={cn(
                 "w-20 h-20 rounded-full border-2 flex items-center justify-center text-3xl font-bold overflow-hidden shadow-inner transition-all",
-                isDragging 
+                isDragActive 
                   ? "bg-primary/20 border-primary border-dashed" 
                   : "bg-[#ebecf0] border-border-polish"
               )}>
                 {(formData.photoURL && formData.photoURL.length > 0) ? (
-                  <img src={formData.photoURL} alt="" className="w-full h-full object-cover" />
+                   <img src={formData.photoURL} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  isDragging ? <Upload className="w-8 h-8 text-primary animate-bounce" /> : profile.displayName?.charAt(0)
+                  isDragActive ? <Upload className="w-8 h-8 text-primary animate-bounce" /> : profile.displayName?.charAt(0)
                 )}
                 
                 {/* Hover Overlay */}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-[10px] text-white transition-opacity font-bold uppercase tracking-tighter">
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-[10px] text-white transition-opacity font-bold uppercase tracking-tighter text-center px-2">
                   <Upload className="w-4 h-4 mb-0.5" />
                   {t('uploadPhoto')}
                 </div>
