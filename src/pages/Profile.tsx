@@ -212,18 +212,19 @@ const Profile: React.FC = () => {
                   className="absolute top-full left-0 right-0 z-10 mt-2 p-4 bg-white border border-border-polish shadow-xl rounded-xl space-y-3"
                 >
                   <label className="text-[10px] font-black text-text-light uppercase tracking-widest block">{t('changePhoto')}</label>
+                  <p className="text-[10px] text-text-light italic">{t('ku') === 'ku' ? 'تۆ دەتوانی وێنەکە بگۆڕیت یان بیسڕیتەوە' : 'You can change the photo or clear it'}</p>
                   <div className="flex gap-2">
-                    <input 
-                      type="text"
-                      value={formData.photoURL}
-                      onChange={(e) => setFormData({ ...formData, photoURL: e.target.value })}
-                      placeholder={t('photoUrlPlaceholder')}
-                      className="flex-1 p-2 text-xs border border-border-polish rounded bg-gray-50 outline-none focus:ring-1 focus:ring-primary"
-                    />
+                    <button 
+                      type="button"
+                      onClick={() => setFormData({ ...formData, photoURL: '' })}
+                      className="border border-danger/20 text-danger px-3 py-1 text-xs font-bold rounded hover:bg-red-50"
+                    >
+                      {t('ku') === 'ku' ? 'سڕینەوەی وێنە' : 'Clear Photo'}
+                    </button>
                     <button 
                       type="button"
                       onClick={() => setIsEditingPhoto(false)}
-                      className="bg-primary text-black px-3 py-1 text-xs font-bold rounded"
+                      className="bg-primary text-black px-3 py-1 text-xs font-bold rounded flex-1"
                     >
                       {t('close')}
                     </button>
