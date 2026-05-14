@@ -60,7 +60,7 @@ const Profile: React.FC = () => {
       'image/*': ['.jpeg', '.jpg', '.png', '.webp']
     },
     multiple: false
-  });
+  } as any);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -18,6 +18,8 @@ import BottomNav from './components/BottomNav';
 import { useLanguage } from './context/LanguageContext';
 import { cn } from './lib/utils';
 
+import { AdMobService } from './services/adMobService';
+
 const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean }> = ({ children, adminOnly }) => {
   const { user, profile, loading, isAdmin } = useAuth();
   const { isRTL } = useLanguage();
@@ -40,6 +42,17 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean 
 function AppRoutes() {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const [isBottomNavVisible, setIsBottomNavVisible] = React.useState(true);
+
+  React.useEffect(() => {
+    // Show banner on mount
+    AdMobService.initialize().then(() => {
+      AdMobService.showBanner();
+    });
+    
+    return () => {
+      AdMobService.removeBanner();
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-bg-polish flex flex-col md:flex-row relative overflow-hidden">

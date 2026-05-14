@@ -35,6 +35,21 @@ Inside **Android Studio**:
 2. Go to the top menu: **Build > Build Bundle(s) / APK(s) > Build APK(s)**.
 3. Once finished, a popup will appear in the bottom right. Click **"locate"** to find your `app-debug.apk` file.
 
+### 💰 AdMob Configuration
+
+I have pre-configured AdMob with **Test IDs**. To show your own ads:
+
+1. **Get your IDs**: Create an app and ad units in the [AdMob Console](https://apps.admob.com/).
+2. **Update App IDs**: In `capacitor.config.ts`, replace the `androidAppId` and `iosAppId`.
+3. **Update Ad Unit IDs**: In `src/services/adMobService.ts`, replace the `adId` in the `showBanner` method.
+4. **Android Setup**: The AdMob App ID must also be added to `android/app/src/main/AndroidManifest.xml` inside the `<application>` tag:
+   ```xml
+   <meta-data
+       android:name="com.google.android.gms.ads.APPLICATION_ID"
+       android:value="ca-app-pub-YOUR-APP-ID"/>
+   ```
+5. **Sync**: Run `npm run cap:sync` after changing IDs.
+
 ### 🛠 Troubleshooting Firebase Errors
 
 #### ❌ Error: `auth/operation-not-allowed`
