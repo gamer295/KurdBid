@@ -10,8 +10,6 @@ import ItemCard from '../components/ItemCard';
 import { useDropzone } from 'react-dropzone';
 import { useLanguage } from '../context/LanguageContext';
 
-import { resizeImage } from '../lib/imageUtils';
-
 const MySales: React.FC = () => {
   const { user, isAdmin } = useAuth();
   const { t, isRTL } = useLanguage();
@@ -71,6 +69,42 @@ const MySales: React.FC = () => {
 
     return () => unsubscribe();
   }, [user]);
+
+  const resizeImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const max_size = 600; // Reduced from 800 to prevent hitting Firestore 1MB limit
+
+          if (width > height) {
+            if (width > max_size) {
+              height *= max_size / width;
+              width = max_size;
+            }
+          } else {
+            if (height > max_size) {
+              width *= max_size / height;
+              height = max_size;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.5)); // Reduced quality from 0.7 to 0.5 for stability
+        };
+        img.onerror = () => reject(new Error('Image load failed'));
+        img.src = event.target?.result as string;
+      };
+      reader.onerror = () => reject(new Error('File read failed'));
+      reader.readAsDataURL(file);
+    });
+  };
 
   const onDrop = async (acceptedFiles: File[]) => {
     if (images.length >= 4) return;
@@ -378,7 +412,7 @@ const MySales: React.FC = () => {
                   <div 
                     {...getRootProps()} 
                     className={cn(
-                      "border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer min-h-[160px] flex items-center justify-center",
+                      "border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer",
                       isDragActive ? "border-primary bg-primary/5" : "border-border-polish bg-bg-polish",
                       (images.length >= 4 || processingImages) && "opacity-50 cursor-not-allowed"
                     )}
@@ -386,19 +420,14 @@ const MySales: React.FC = () => {
                     <input {...getInputProps()} />
                     <div className="flex flex-col items-center gap-2">
                       {processingImages ? (
-                        <div className="flex flex-col items-center gap-3">
-                          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-                          <p className="text-[10px] font-bold text-primary uppercase tracking-widest">{isRTL ? 'خەریکی پڕۆسێسکردنە...' : 'Optimizing Images...'}</p>
-                        </div>
+                        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
                       ) : (
-                        <>
-                          <Plus className={cn("w-8 h-8", isDragActive ? "text-primary" : "text-text-light")} />
-                          <p className="text-xs font-bold text-text-dark">
-                            {t('dragAndDrop')}
-                          </p>
-                          <p className="text-[10px] text-text-light">{t('maxFilesWarning')}</p>
-                        </>
+                        <Plus className={cn("w-8 h-8", isDragActive ? "text-primary" : "text-text-light")} />
                       )}
+                      <p className="text-xs font-bold text-text-dark">
+                        {processingImages ? (isRTL ? 'خەریکی پڕۆسێسکردنە...' : 'Processing...') : t('dragAndDrop')}
+                      </p>
+                      <p className="text-[10px] text-text-light">{t('maxFilesWarning')}</p>
                     </div>
                   </div>
 

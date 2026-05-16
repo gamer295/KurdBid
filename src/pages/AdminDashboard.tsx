@@ -19,7 +19,6 @@ const AdminDashboard: React.FC = () => {
   const [ads, setAds] = useState<any[]>([]);
   const [settings, setSettings] = useState<any>({ adsEnabled: true });
   const [loading, setLoading] = useState(true);
-  const [maintenanceLoading, setMaintenanceLoading] = useState(false);
   
   // Ad Form State
   const [showAdForm, setShowAdForm] = useState(false);
@@ -125,73 +124,6 @@ const AdminDashboard: React.FC = () => {
         isBanned: true,
         bannedUntil: duration
       });
-    }
-  };
-
-  useEffect(() => {
-    if (!loading && items.length > 0 && isAdmin) {
-      const autoClean = async () => {
-        const threeMonthsAgo = new Date();
-        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-        const oldItems = items.filter(item => {
-          const createdAt = item.createdAt?.toDate?.() || new Date(0);
-          return createdAt < threeMonthsAgo && item.status !== 'removed';
-        });
-        if (oldItems.length > 0) {
-          console.log(`Auto-cleaning ${oldItems.length} stale items...`);
-          const promises = oldItems.map(item => 
-            deleteDoc(doc(db, 'items', item.id))
-          );
-          await Promise.all(promises);
-        }
-      };
-      // Only run once per session for performance
-      const lastClean = sessionStorage.getItem('last_autoclean');
-      const now = Date.now();
-      if (!lastClean || now - parseInt(lastClean) > 24 * 60 * 60 * 1000) {
-        autoClean();
-        sessionStorage.setItem('last_autoclean', now.toString());
-      }
-    }
-  }, [loading, items, isAdmin]);
-
-  const handleMaintenance = async () => {
-    const confirmMsg = isRTL 
-      ? 'ئایا دڵنیای لە سڕینەوەی هەموو ئەو کاڵایانەی کە کۆنترن لە ٣ مانگ؟' 
-      : 'Are you sure you want to delete all items older than 3 months?';
-    
-    if (confirm(confirmMsg)) {
-      setMaintenanceLoading(true);
-      try {
-        const threeMonthsAgo = new Date();
-        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-
-        // We use client side filtering for safety since we have the items list
-        const oldItems = items.filter(item => {
-          const createdAt = item.createdAt?.toDate?.() || new Date(0);
-          return createdAt < threeMonthsAgo && item.status !== 'removed';
-        });
-
-        if (oldItems.length === 0) {
-          alert(isRTL ? 'هیچ کاڵایەکی کۆن نەدۆزرایەوە' : 'No old items found');
-          setMaintenanceLoading(false);
-          return;
-        }
-
-        const promises = oldItems.map(item => 
-          deleteDoc(doc(db, 'items', item.id))
-        );
-
-        await Promise.all(promises);
-        alert(isRTL 
-          ? `سەرکەوتووبوو: ${oldItems.length} کاڵا سڕایەوە` 
-          : `Success: ${oldItems.length} items permanently deleted to save space.`);
-      } catch (err) {
-        console.error("Maintenance error:", err);
-        alert(t('errorOccurred'));
-      } finally {
-        setMaintenanceLoading(false);
-      }
     }
   };
 
@@ -335,14 +267,6 @@ const AdminDashboard: React.FC = () => {
           >
             <Trash2 className="w-4 h-4" />
             {t('deleteAllPosts')}
-          </button>
-          <button 
-            onClick={handleMaintenance}
-            disabled={maintenanceLoading}
-            className="mt-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-indigo-700 transition flex items-center gap-2 disabled:opacity-50"
-          >
-            {maintenanceLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-            {isRTL ? 'پاککردنەوەی کاڵا کۆنەکان (٣ مانگ)' : 'Clean Stale Items (3 Months)'}
           </button>
         </div>
         <div className="bg-white p-6 rounded-2xl border border-orange-200 min-w-[240px]">

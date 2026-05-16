@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { User, MapPin, Phone, TextQuote, Save, CheckCircle2, ShieldAlert, Upload, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { User, MapPin, Phone, TextQuote, Save, CheckCircle2, ShieldAlert, Upload, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useDropzone } from 'react-dropzone';
-import { resizeImage } from '../lib/imageUtils';
 
 import { useLanguage } from '../context/LanguageContext';
 
@@ -37,22 +36,22 @@ const Profile: React.FC = () => {
     }
   }, [profile]);
 
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+  const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (!file) return;
 
-    setLoading(true);
-    try {
-      const resized = await resizeImage(file);
-      setFormData(prev => ({ ...prev, photoURL: resized }));
+    if (file.size > 2 * 1024 * 1024) {
+      setError(t('ku') === 'ku' ? 'وێنەکە بێجگە لە ٢ مێگابایت بێت' : 'Image must be smaller than 2MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData(prev => ({ ...prev, photoURL: reader.result as string }));
       setIsEditingPhoto(true);
       setError(null);
-    } catch (err) {
-      console.error(err);
-      setError(t('ku') === 'ku' ? 'کێشەیەک لە وێنەکەدا هەیە' : 'Problem with image processing');
-    } finally {
-      setLoading(false);
-    }
+    };
+    reader.readAsDataURL(file);
   }, [t]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -128,16 +127,11 @@ const Profile: React.FC = () => {
             >
               <input {...getInputProps()} />
               <div className={cn(
-                "w-20 h-20 rounded-full border-2 flex items-center justify-center text-3xl font-bold overflow-hidden shadow-inner transition-all relative",
+                "w-20 h-20 rounded-full border-2 flex items-center justify-center text-3xl font-bold overflow-hidden shadow-inner transition-all",
                 isDragActive 
                   ? "bg-primary/20 border-primary border-dashed" 
                   : "bg-[#ebecf0] border-border-polish"
               )}>
-                {loading && (
-                  <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center z-10">
-                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                  </div>
-                )}
                 {(formData.photoURL && formData.photoURL.length > 0) ? (
                    <img src={formData.photoURL} alt="" className="w-full h-full object-cover" />
                 ) : (

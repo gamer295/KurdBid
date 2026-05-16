@@ -14,10 +14,6 @@ import { formatDate, cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../context/LanguageContext';
 import { GoogleGenAI } from "@google/genai";
-import { resizeImage } from '../lib/imageUtils';
-import { Filesystem, Directory } from '@capacitor/filesystem';
-import { Toast } from '@capacitor/toast';
-import { Download } from 'lucide-react';
 
 const ConversationPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -124,18 +120,32 @@ const ConversationPage: React.FC = () => {
 
   const aiBotId = 'ai-test-bot';
 
-  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setUploading(true);
-      try {
-        const resized = await resizeImage(file);
-        setSelectedImage(resized);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setUploading(false);
-      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const max_size = 500;
+          if (width > height) {
+            if (width > max_size) { height *= max_size / width; width = max_size; }
+          } else {
+            if (height > max_size) { width *= max_size / height; height = max_size; }
+          }
+          canvas.width = width; canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          setSelectedImage(canvas.toDataURL('image/jpeg', 0.6));
+          setUploading(false);
+        };
+        img.src = reader.result as string;
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -263,44 +273,6 @@ const ConversationPage: React.FC = () => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSaveImage = async (base64Data: string) => {
-    try {
-      const fileName = `kurdbid_img_${Date.now()}.jpg`;
-      const base64Content = base64Data.split(',')[1];
-      
-      await Filesystem.writeFile({
-        path: fileName,
-        data: base64Content,
-        directory: Directory.Documents
-      });
-
-      await Toast.show({
-        text: isRTL ? 'وێنەکە لە دۆکیومێنتەکان پاشەکەوت کرا' : 'Image saved to Documents',
-        duration: 'short',
-        position: 'bottom'
-      });
-    } catch (err) {
-      console.error("Error saving image:", err);
-      // Fallback for web
-      const link = document.createElement('a');
-      link.href = base64Data;
-      link.download = `kurdbid_${Date.now()}.jpg`;
-      link.click();
-    }
-  };
-  const handleCloseChat = async () => {
-    if (!id) return;
-    try {
-      await updateDoc(doc(db, 'conversations', id), {
-        status: 'closed',
-        updatedAt: serverTimestamp()
-      });
-      setConversation((prev: any) => ({ ...prev, status: 'closed' }));
-    } catch (err) {
-      console.error("Error closing chat:", err);
-    }
-  };
-
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if ((!newMessage.trim() && !selectedImage && !audioUrl) || !id || !user || !conversation) return;
@@ -404,23 +376,7 @@ const ConversationPage: React.FC = () => {
             </div>
           )}
         </div>
-
-        {conversation?.status !== 'closed' && (
-          <button 
-            onClick={handleCloseChat}
-            className="text-xs font-bold text-danger hover:bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 transition-colors shrink-0"
-          >
-            {isRTL ? 'داخستنی چات' : 'Close Chat'}
-          </button>
-        )}
       </div>
-
-      {conversation?.status === 'closed' && (
-        <div className="bg-gray-100 text-center py-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center justify-center gap-2">
-          <X className="w-3 h-3" />
-          {isRTL ? 'ئەم پەیامە داخراوە' : 'This conversation is closed'}
-        </div>
-      )}
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6 bg-gray-50/50 flex flex-col">
@@ -445,19 +401,10 @@ const ConversationPage: React.FC = () => {
               
               {msg.imageUrl && (
                 <div 
-                  className="mb-2 rounded-xl overflow-hidden border border-black/5 cursor-zoom-in shadow-inner relative group/img"
+                  className="mb-2 rounded-xl overflow-hidden border border-black/5 cursor-zoom-in shadow-inner"
                   onClick={() => setZoomImage(msg.imageUrl)}
                 >
                   <img src={msg.imageUrl} alt="" className="w-full h-auto max-h-60 md:max-h-80 object-cover hover:scale-105 transition-transform duration-500" />
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSaveImage(msg.imageUrl);
-                    }}
-                    className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full opacity-0 group-hover/img:opacity-100 transition-opacity hover:bg-black/80"
-                  >
-                    <Download className="w-4 h-4" />
-                  </button>
                 </div>
               )}
 
@@ -550,12 +497,6 @@ const ConversationPage: React.FC = () => {
         </AnimatePresence>
 
         <form onSubmit={handleSendMessage} className="flex gap-2 md:gap-4 items-end">
-          {conversation?.status === 'closed' ? (
-             <div className="flex-1 text-center py-4 text-xs font-bold text-gray-400 bg-gray-50 rounded-2xl border border-dashed">
-               {isRTL ? 'ناتوانیت نامە بنێریت بۆ چاتی داخراو' : 'You cannot send messages to a closed chat'}
-             </div>
-          ) : (
-            <>
           <div className="flex gap-2 shrink-0">
             <label className={cn(
               "cursor-pointer p-3 md:p-4 bg-gray-50 border rounded-2xl hover:bg-gray-100 transition shadow-sm shrink-0",
@@ -614,8 +555,6 @@ const ConversationPage: React.FC = () => {
           >
             <Send className="w-5 h-5 md:w-6 md:h-6" />
           </button>
-            </>
-          )}
         </form>
       </div>
 
@@ -644,19 +583,6 @@ const ConversationPage: React.FC = () => {
               referrerPolicy="no-referrer"
               onClick={(e) => e.stopPropagation()}
             />
-
-            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-4">
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleSaveImage(zoomImage);
-                }}
-                className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white px-6 py-3 rounded-2xl flex items-center gap-2 font-bold transition-all border border-white/20"
-              >
-                <Download className="w-5 h-5" />
-                {isRTL ? 'داگرتن' : 'Download'}
-              </button>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
