@@ -7,7 +7,7 @@ import { db } from '../lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useDropzone } from 'react-dropzone';
 import { Capacitor } from '@capacitor/core';
-import { pickImage, convertWebPathToBase64 } from '../services/imageService';
+import { pickImage, convertWebPathToBase64, resizeImage } from '../services/imageService';
 
 import { useLanguage } from '../context/LanguageContext';
 
@@ -42,14 +42,10 @@ const Profile: React.FC = () => {
     const file = acceptedFiles[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      setError(t('ku') === 'ku' ? 'وێنەکە بێجگە لە ٢ مێگابایت بێت' : 'Image must be smaller than 2MB');
-      return;
-    }
-
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setFormData(prev => ({ ...prev, photoURL: reader.result as string }));
+    reader.onloadend = async () => {
+      const resized = await resizeImage(reader.result as string);
+      setFormData(prev => ({ ...prev, photoURL: resized }));
       setIsEditingPhoto(true);
       setError(null);
     };

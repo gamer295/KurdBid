@@ -12,7 +12,7 @@ import { formatDate, cn } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { Capacitor } from '@capacitor/core';
-import { pickImage, convertWebPathToBase64 } from '../services/imageService';
+import { pickImage, convertWebPathToBase64, resizeImage } from '../services/imageService';
 
 const AdminDashboard: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -179,10 +179,11 @@ const AdminDashboard: React.FC = () => {
 
     setUploading(true);
     const reader = new FileReader();
-    reader.onloadend = () => {
+    reader.onloadend = async () => {
       const result = reader.result as string;
       if (file.type.startsWith('image/')) {
-        setAdImage(result);
+        const resized = await resizeImage(result);
+        setAdImage(resized);
         setAdMediaType('image');
       } else if (file.type.startsWith('video/')) {
         setAdVideo(result);

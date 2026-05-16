@@ -28,7 +28,11 @@ export const pickImage = async (isMultiple: boolean = false): Promise<string[]> 
           resultType: CameraResultType.DataUrl,
           source: CameraSource.Photos
         });
-        return [image.dataUrl || ''];
+        if (image.dataUrl) {
+          const resized = await resizeImage(image.dataUrl);
+          return [resized];
+        }
+        return [];
       }
     } catch (error) {
       console.error('Camera plugin error (possible cancellation):', error);
@@ -39,9 +43,45 @@ export const pickImage = async (isMultiple: boolean = false): Promise<string[]> 
   }
 };
 
-export const convertWebPathToBase64 = async (webPath: string, nativePath?: string): Promise<string> => {
-  if (webPath.startsWith('data:')) return webPath;
+export const resizeImage = (base64Str: string, maxWidth = 800, maxHeight = 800): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = base64Str;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
 
+      if (width > height) {
+        if (width > maxWidth) {
+          height *= maxWidth / width;
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width *= maxHeight / height;
+          height = maxHeight;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', 0.6));
+    };
+    img.onerror = () => {
+      resolve(base64Str); // Fallback to original if processing fails
+    };
+  });
+};
+
+export const convertWebPathToBase64 = async (webPath: string, nativePath?: string): Promise<string> => {
+  if (webPath.startsWith('data:')) {
+    return await resizeImage(webPath);
+  }
+
+  let base64 = '';
   // Try Filesystem first on native as it is more reliable
   if (Capacitor.isNativePlatform() && nativePath) {
     try {
@@ -51,32 +91,31 @@ export const convertWebPathToBase64 = async (webPath: string, nativePath?: strin
       // result.data could be a string (base64) or a Blob depending on environment
       const base64Data = typeof result.data === 'string' ? result.data : '';
       if (base64Data) {
-        return `data:image/jpeg;base64,${base64Data}`;
+        base64 = `data:image/jpeg;base64,${base64Data}`;
       }
     } catch (e) {
       console.warn('Filesystem read failed, falling back to fetch', e);
     }
   }
 
-  if (!webPath) return '';
-
-  try {
-    const response = await fetch(webPath);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = () => {
-        console.error('FileReader error during conversion');
-        reject(new Error('FileReader error'));
-      };
-      reader.onload = () => {
-        resolve(reader.result as string);
-      };
-      reader.readAsDataURL(blob);
-    });
-  } catch (error) {
-    console.error('convertWebPathToBase64 failed for:', webPath, error);
-    return ''; 
+  if (!base64 && webPath) {
+    try {
+      const response = await fetch(webPath);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const blob = await response.blob();
+      base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('FileReader error'));
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('convertWebPathToBase64 fetch failed for:', webPath, error);
+    }
   }
+
+  if (base64) {
+    return await resizeImage(base64);
+  }
+  return '';
 };

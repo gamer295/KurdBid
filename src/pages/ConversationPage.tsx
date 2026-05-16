@@ -15,7 +15,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../context/LanguageContext';
 import { GoogleGenAI } from "@google/genai";
 import { Capacitor } from '@capacitor/core';
-import { pickImage, convertWebPathToBase64 } from '../services/imageService';
+import { pickImage, convertWebPathToBase64, resizeImage } from '../services/imageService';
 
 const ConversationPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -146,25 +146,10 @@ const ConversationPage: React.FC = () => {
     if (file) {
       setUploading(true);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          const max_size = 500;
-          if (width > height) {
-            if (width > max_size) { height *= max_size / width; width = max_size; }
-          } else {
-            if (height > max_size) { width *= max_size / height; height = max_size; }
-          }
-          canvas.width = width; canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-          setSelectedImage(canvas.toDataURL('image/jpeg', 0.6));
-          setUploading(false);
-        };
-        img.src = reader.result as string;
+      reader.onloadend = async () => {
+        const resized = await resizeImage(reader.result as string);
+        setSelectedImage(resized);
+        setUploading(false);
       };
       reader.readAsDataURL(file);
     }

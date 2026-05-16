@@ -10,7 +10,7 @@ import ItemCard from '../components/ItemCard';
 import { useDropzone } from 'react-dropzone';
 import { useLanguage } from '../context/LanguageContext';
 import { Capacitor } from '@capacitor/core';
-import { pickImage, convertWebPathToBase64 } from '../services/imageService';
+import { pickImage, convertWebPathToBase64, resizeImage } from '../services/imageService';
 
 const MySales: React.FC = () => {
   const { user, isAdmin } = useAuth();
@@ -72,42 +72,6 @@ const MySales: React.FC = () => {
     return () => unsubscribe();
   }, [user]);
 
-  const resizeImage = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          const max_size = 600; // Reduced from 800 to prevent hitting Firestore 1MB limit
-
-          if (width > height) {
-            if (width > max_size) {
-              height *= max_size / width;
-              width = max_size;
-            }
-          } else {
-            if (height > max_size) {
-              width *= max_size / height;
-              height = max_size;
-            }
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', 0.5)); // Reduced quality from 0.7 to 0.5 for stability
-        };
-        img.onerror = () => reject(new Error('Image load failed'));
-        img.src = event.target?.result as string;
-      };
-      reader.onerror = () => reject(new Error('File read failed'));
-      reader.readAsDataURL(file);
-    });
-  };
-
   const onDrop = async (acceptedFiles: File[]) => {
     if (images.length >= 4) return;
     
@@ -117,13 +81,20 @@ const MySales: React.FC = () => {
       const filesToUpload = acceptedFiles.slice(0, remaining);
       
       const base64Images = await Promise.all(
-        filesToUpload.map(file => resizeImage(file).catch(err => {
-          console.error(err);
-          return null;
-        }))
+        filesToUpload.map(async (file) => {
+          return new Promise<string | null>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+              const res = await resizeImage(e.target?.result as string);
+              resolve(res);
+            };
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(file);
+          });
+        })
       );
       
-      const filtered = base64Images.filter((img): img is string => img !== null);
+      const filtered = base64Images.filter((img): img is string => !!img);
       setImages(prev => [...prev, ...filtered]);
     } catch (err) {
       console.error("Drop processing failed", err);
