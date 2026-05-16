@@ -3,7 +3,7 @@ import { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.kurdbid.app',
   appName: 'KurdBid',
-  webDir: 'dist',
+  webDir: 'docs',
   server: {
     androidScheme: 'https'
   },

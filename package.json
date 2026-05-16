@@ -8,7 +8,7 @@
     "start": "node server.ts",
     "build": "vite build",
     "preview": "vite preview",
-    "clean": "rm -rf dist",
+    "clean": "rm -rf dist docs",
     "lint": "tsc --noEmit",
     "cap:sync": "npm run build && npx cap sync",
     "cap:open": "npx cap open android"

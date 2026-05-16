@@ -43,11 +43,11 @@ async function startServer() {
       }
     });
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
+    const docsPath = path.join(process.cwd(), 'docs');
+    app.use(express.static(docsPath));
     // SPA Fallback: Send index.html for all non-API routes
     app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+      res.sendFile(path.join(docsPath, 'index.html'));
     });
   }
 
