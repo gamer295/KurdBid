@@ -129,7 +129,9 @@ const ConversationPage: React.FC = () => {
         setUploading(true);
         try {
           const base64 = await convertWebPathToBase64(paths[0]);
-          setSelectedImage(base64);
+          if (base64) {
+            setSelectedImage(base64);
+          }
         } catch (err) {
           console.error('Native image pick failed', err);
         } finally {

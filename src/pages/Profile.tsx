@@ -63,8 +63,10 @@ const Profile: React.FC = () => {
         setLoading(true);
         try {
           const base64 = await convertWebPathToBase64(paths[0]);
-          setFormData(prev => ({ ...prev, photoURL: base64 }));
-          setIsEditingPhoto(true);
+          if (base64) {
+            setFormData(prev => ({ ...prev, photoURL: base64 }));
+            setIsEditingPhoto(true);
+          }
         } catch (err) {
           console.error('Native image conversion failed', err);
         } finally {
@@ -140,12 +142,14 @@ const Profile: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="flex items-center gap-6 mb-8 pb-8 border-b border-border-polish relative">
             <div 
-              {...getRootProps()}
-              onClick={() => {
-                if (Capacitor.isNativePlatform()) {
-                  handleNativeImagePick();
+              {...getRootProps({
+                onClick: (e) => {
+                  if (Capacitor.isNativePlatform()) {
+                    e.stopPropagation();
+                    handleNativeImagePick();
+                  }
                 }
-              }}
+              })}
               className={cn(
                 "relative group cursor-pointer transition-all duration-300",
                 isDragActive && "scale-110"

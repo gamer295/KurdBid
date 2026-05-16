@@ -200,8 +200,10 @@ const AdminDashboard: React.FC = () => {
         setUploading(true);
         try {
           const base64 = await convertWebPathToBase64(paths[0]);
-          setAdImage(base64);
-          setAdMediaType('image');
+          if (base64) {
+            setAdImage(base64);
+            setAdMediaType('image');
+          }
         } catch (err) {
           console.error('Native image pick failed', err);
         } finally {
@@ -693,12 +695,14 @@ const AdminDashboard: React.FC = () => {
                   </div>
                 ) : (
                   <div 
-                    {...getRootProps()} 
-                    onClick={() => {
-                      if (Capacitor.isNativePlatform()) {
-                        handleNativeImagePick();
+                    {...getRootProps({
+                      onClick: (e) => {
+                        if (Capacitor.isNativePlatform()) {
+                          e.stopPropagation();
+                          handleNativeImagePick();
+                        }
                       }
-                    }}
+                    })} 
                     className={cn(
                       "border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center gap-3 transition-colors cursor-pointer",
                       isDragActive ? "border-primary bg-primary/5" : "border-gray-200 hover:border-primary hover:bg-gray-50"

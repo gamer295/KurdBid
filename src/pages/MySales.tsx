@@ -144,10 +144,10 @@ const MySales: React.FC = () => {
           const base64Images = await Promise.all(
             paths.map(path => convertWebPathToBase64(path).catch(err => {
               console.error(err);
-              return null;
+              return '';
             }))
           );
-          const filtered = base64Images.filter((img): img is string => img !== null);
+          const filtered = base64Images.filter((img): img is string => !!img);
           setImages(prev => [...prev, ...filtered]);
         } catch (err) {
           console.error('Native image pick failed', err);
@@ -439,12 +439,16 @@ const MySales: React.FC = () => {
                   </label>
                   
                   <div 
-                    {...getRootProps()} 
-                    onClick={() => {
-                      if (Capacitor.isNativePlatform()) {
-                        handleNativeImagePick();
+                    {...getRootProps({
+                      onClick: (e) => {
+                        if (Capacitor.isNativePlatform()) {
+                          if (images.length < 4) {
+                            e.stopPropagation();
+                            handleNativeImagePick();
+                          }
+                        }
                       }
-                    }}
+                    })} 
                     className={cn(
                       "border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer",
                       isDragActive ? "border-primary bg-primary/5" : "border-border-polish bg-bg-polish",
