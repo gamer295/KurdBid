@@ -128,6 +128,33 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (!loading && items.length > 0 && isAdmin) {
+      const autoClean = async () => {
+        const threeMonthsAgo = new Date();
+        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+        const oldItems = items.filter(item => {
+          const createdAt = item.createdAt?.toDate?.() || new Date(0);
+          return createdAt < threeMonthsAgo && item.status !== 'removed';
+        });
+        if (oldItems.length > 0) {
+          console.log(`Auto-cleaning ${oldItems.length} stale items...`);
+          const promises = oldItems.map(item => 
+            deleteDoc(doc(db, 'items', item.id))
+          );
+          await Promise.all(promises);
+        }
+      };
+      // Only run once per session for performance
+      const lastClean = sessionStorage.getItem('last_autoclean');
+      const now = Date.now();
+      if (!lastClean || now - parseInt(lastClean) > 24 * 60 * 60 * 1000) {
+        autoClean();
+        sessionStorage.setItem('last_autoclean', now.toString());
+      }
+    }
+  }, [loading, items, isAdmin]);
+
   const handleMaintenance = async () => {
     const confirmMsg = isRTL 
       ? 'ئایا دڵنیای لە سڕینەوەی هەموو ئەو کاڵایانەی کە کۆنترن لە ٣ مانگ؟' 
@@ -152,13 +179,13 @@ const AdminDashboard: React.FC = () => {
         }
 
         const promises = oldItems.map(item => 
-          updateDoc(doc(db, 'items', item.id), { status: 'removed' })
+          deleteDoc(doc(db, 'items', item.id))
         );
 
         await Promise.all(promises);
         alert(isRTL 
           ? `سەرکەوتووبوو: ${oldItems.length} کاڵا سڕایەوە` 
-          : `Success: ${oldItems.length} items removed to save space.`);
+          : `Success: ${oldItems.length} items permanently deleted to save space.`);
       } catch (err) {
         console.error("Maintenance error:", err);
         alert(t('errorOccurred'));

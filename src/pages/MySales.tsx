@@ -378,7 +378,7 @@ const MySales: React.FC = () => {
                   <div 
                     {...getRootProps()} 
                     className={cn(
-                      "border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer",
+                      "border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer min-h-[160px] flex items-center justify-center",
                       isDragActive ? "border-primary bg-primary/5" : "border-border-polish bg-bg-polish",
                       (images.length >= 4 || processingImages) && "opacity-50 cursor-not-allowed"
                     )}
@@ -386,14 +386,19 @@ const MySales: React.FC = () => {
                     <input {...getInputProps()} />
                     <div className="flex flex-col items-center gap-2">
                       {processingImages ? (
-                        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+                          <p className="text-[10px] font-bold text-primary uppercase tracking-widest">{isRTL ? 'خەریکی پڕۆسێسکردنە...' : 'Optimizing Images...'}</p>
+                        </div>
                       ) : (
-                        <Plus className={cn("w-8 h-8", isDragActive ? "text-primary" : "text-text-light")} />
+                        <>
+                          <Plus className={cn("w-8 h-8", isDragActive ? "text-primary" : "text-text-light")} />
+                          <p className="text-xs font-bold text-text-dark">
+                            {t('dragAndDrop')}
+                          </p>
+                          <p className="text-[10px] text-text-light">{t('maxFilesWarning')}</p>
+                        </>
                       )}
-                      <p className="text-xs font-bold text-text-dark">
-                        {processingImages ? (isRTL ? 'خەریکی پڕۆسێسکردنە...' : 'Processing...') : t('dragAndDrop')}
-                      </p>
-                      <p className="text-[10px] text-text-light">{t('maxFilesWarning')}</p>
                     </div>
                   </div>
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { User, MapPin, Phone, TextQuote, Save, CheckCircle2, ShieldAlert, Upload, Image as ImageIcon } from 'lucide-react';
+import { User, MapPin, Phone, TextQuote, Save, CheckCircle2, ShieldAlert, Upload, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { db } from '../lib/firebase';
@@ -128,11 +128,16 @@ const Profile: React.FC = () => {
             >
               <input {...getInputProps()} />
               <div className={cn(
-                "w-20 h-20 rounded-full border-2 flex items-center justify-center text-3xl font-bold overflow-hidden shadow-inner transition-all",
+                "w-20 h-20 rounded-full border-2 flex items-center justify-center text-3xl font-bold overflow-hidden shadow-inner transition-all relative",
                 isDragActive 
                   ? "bg-primary/20 border-primary border-dashed" 
                   : "bg-[#ebecf0] border-border-polish"
               )}>
+                {loading && (
+                  <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center z-10">
+                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                  </div>
+                )}
                 {(formData.photoURL && formData.photoURL.length > 0) ? (
                    <img src={formData.photoURL} alt="" className="w-full h-full object-cover" />
                 ) : (
