@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { doc, getDoc, collection, addDoc, query, where, getDocs, updateDoc, serverTimestamp, onSnapshot, runTransaction } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
@@ -60,6 +60,7 @@ const ItemPage: React.FC = () => {
   const { user, profile, isFollowing, followUser, unfollowUser } = useAuth();
   const { t, isRTL } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (!id) return;
@@ -191,7 +192,7 @@ const ItemPage: React.FC = () => {
 
   const handleMessageSeller = async () => {
     if (!user || !item) {
-      navigate('/login');
+      navigate('/login', { state: { from: location } });
       return;
     }
 
@@ -370,6 +371,16 @@ const ItemPage: React.FC = () => {
                 {item.price.toLocaleString()} {isRTL ? 'د.ع' : 'IQD'}
               </p>
             )}
+
+            {(!user || user.uid !== item.sellerId) && (
+              <button
+                onClick={handleMessageSeller}
+                className="flex items-center justify-center gap-2 w-full py-4 bg-primary/10 text-primary rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-primary/20 transition-all active:scale-[0.98] border border-primary/20"
+              >
+                <MessageCircle className="w-5 h-5" />
+                {t('contactSeller')}
+              </button>
+            )}
           </div>
 
           <div className="bg-bg-polish p-6 rounded-2xl space-y-4 border border-border-polish">
@@ -404,36 +415,38 @@ const ItemPage: React.FC = () => {
                 </div>
               </div>
 
-              {user && user.uid !== item.sellerId && (
+              {(!user || user.uid !== item.sellerId) && (
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleMessageSeller}
-                    className="p-2.5 rounded-full bg-white border border-border-polish text-indigo-600 hover:bg-indigo-50 transition-all active:scale-95 shadow-sm"
-                    title={t('contactSeller')}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-border-polish text-text-dark hover:bg-gray-50 transition-all active:scale-95 shadow-sm"
                   >
-                    <MessageCircle className="w-5 h-5" />
+                    <MessageCircle className="w-4 h-4 text-primary" />
+                    <span className="text-xs font-bold">{t('contactSeller')}</span>
                   </button>
-                  <button
-                    onClick={() => isFollowing(item.sellerId) ? unfollowUser(item.sellerId) : followUser(item.sellerId)}
-                    className={cn(
-                      "flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95",
-                      isFollowing(item.sellerId)
-                        ? "bg-gray-100 text-text-light border border-border-polish"
-                        : "bg-primary text-black"
-                    )}
-                  >
-                    {isFollowing(item.sellerId) ? (
-                      <>
-                        <UserCheck className="w-3.5 h-3.5" />
-                        {t('following')}
-                      </>
-                    ) : (
-                      <>
-                        <UserPlus className="w-3.5 h-3.5" />
-                        {t('follow')}
-                      </>
-                    )}
-                  </button>
+                  {user && (
+                    <button
+                      onClick={() => isFollowing(item.sellerId) ? unfollowUser(item.sellerId) : followUser(item.sellerId)}
+                      className={cn(
+                        "flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95",
+                        isFollowing(item.sellerId)
+                          ? "bg-gray-100 text-text-light border border-border-polish"
+                          : "bg-primary text-black"
+                      )}
+                    >
+                      {isFollowing(item.sellerId) ? (
+                        <>
+                          <UserCheck className="w-3.5 h-3.5" />
+                          {t('following')}
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="w-3.5 h-3.5" />
+                          {t('follow')}
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
