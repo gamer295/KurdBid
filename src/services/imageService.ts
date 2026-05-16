@@ -43,35 +43,72 @@ export const pickImage = async (isMultiple: boolean = false): Promise<string[]> 
   }
 };
 
-export const resizeImage = (base64Str: string, maxWidth = 800, maxHeight = 800): Promise<string> => {
+export const resizeImage = (base64Str: string, maxWidth = 400, maxHeight = 400, quality = 0.4): Promise<string> => {
   return new Promise((resolve) => {
+    if (!base64Str) return resolve('');
+    
+    // Safety check: if the input is already small enough, we might still want to resize to be sure
+    // But if resize fails, we definitely don't want to return a string > 1MB
+    
     const img = new Image();
     img.src = base64Str;
     img.onload = () => {
-      const canvas = document.createElement('canvas');
-      let width = img.width;
-      let height = img.height;
+      try {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
 
-      if (width > height) {
-        if (width > maxWidth) {
-          height *= maxWidth / width;
-          width = maxWidth;
+        if (width > height) {
+          if (width > maxWidth) {
+            height *= maxWidth / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width *= maxHeight / height;
+            height = maxHeight;
+          }
         }
-      } else {
-        if (height > maxHeight) {
-          width *= maxHeight / height;
-          height = maxHeight;
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
         }
+        
+        let result = canvas.toDataURL('image/jpeg', quality);
+        
+        // Final sanity check: Firestore limit is 1MB. Base64 is ~1.37x binary.
+        // 1MB = 1,048,576 bytes.
+        // We want to stay well under that. Let's say 800,000 characters.
+        if (result.length > 800000) {
+          // If still too big, try smaller dimensions and lower quality
+          const smallerCanvas = document.createElement('canvas');
+          smallerCanvas.width = width * 0.7;
+          smallerCanvas.height = height * 0.7;
+          const sctx = smallerCanvas.getContext('2d');
+          if (sctx) {
+            sctx.fillStyle = '#FFFFFF';
+            sctx.fillRect(0, 0, smallerCanvas.width, smallerCanvas.height);
+            sctx.drawImage(canvas, 0, 0, smallerCanvas.width, smallerCanvas.height);
+            result = smallerCanvas.toDataURL('image/jpeg', 0.2);
+          }
+        }
+        
+        resolve(result);
+      } catch (e) {
+        console.error('Resize internal error:', e);
+        // If everything fails, return a very small placeholder or empty to avoid 1MB error
+        resolve(''); 
       }
-
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx?.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL('image/jpeg', 0.6));
     };
     img.onerror = () => {
-      resolve(base64Str); // Fallback to original if processing fails
+      console.error('Image load error during resize');
+      // If it's not a valid image, do not return the potentially huge original string
+      resolve(base64Str.length < 800000 ? base64Str : ''); 
     };
   });
 };

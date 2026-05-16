@@ -44,7 +44,7 @@ const Profile: React.FC = () => {
 
     const reader = new FileReader();
     reader.onloadend = async () => {
-      const resized = await resizeImage(reader.result as string);
+      const resized = await resizeImage(reader.result as string, 300, 300, 0.4);
       setFormData(prev => ({ ...prev, photoURL: resized }));
       setIsEditingPhoto(true);
       setError(null);
@@ -60,7 +60,9 @@ const Profile: React.FC = () => {
         try {
           const base64 = await convertWebPathToBase64(paths[0]);
           if (base64) {
-            setFormData(prev => ({ ...prev, photoURL: base64 }));
+            // Re-resize to avatar specific dimensions just in case
+            const avatarResized = await resizeImage(base64, 300, 300, 0.4);
+            setFormData(prev => ({ ...prev, photoURL: avatarResized }));
             setIsEditingPhoto(true);
           }
         } catch (err) {
