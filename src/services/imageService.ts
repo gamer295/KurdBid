@@ -26,7 +26,7 @@ export const pickImage = async (isMultiple: boolean = false): Promise<string[]> 
           quality: 50,
           allowEditing: false,
           resultType: CameraResultType.DataUrl,
-          source: CameraSource.Prompt
+          source: CameraSource.Photos
         });
         return [image.dataUrl || ''];
       }
