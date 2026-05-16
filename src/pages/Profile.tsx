@@ -57,21 +57,19 @@ const Profile: React.FC = () => {
   }, [t]);
 
   const handleNativeImagePick = async () => {
-    if (Capacitor.isNativePlatform()) {
-      const paths = await pickImage(false);
-      if (paths.length > 0) {
-        setLoading(true);
-        try {
-          const base64 = await convertWebPathToBase64(paths[0]);
-          if (base64) {
-            setFormData(prev => ({ ...prev, photoURL: base64 }));
-            setIsEditingPhoto(true);
-          }
-        } catch (err) {
-          console.error('Native image conversion failed', err);
-        } finally {
-          setLoading(false);
+    const paths = await pickImage(false);
+    if (paths.length > 0) {
+      setLoading(true);
+      try {
+        const base64 = await convertWebPathToBase64(paths[0]);
+        if (base64) {
+          setFormData(prev => ({ ...prev, photoURL: base64 }));
+          setIsEditingPhoto(false);
         }
+      } catch (err) {
+        console.error('Native image conversion failed', err);
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -82,8 +80,18 @@ const Profile: React.FC = () => {
       'image/*': ['.jpeg', '.jpg', '.png', '.webp']
     },
     multiple: false,
-    noClick: Capacitor.isNativePlatform()
+    noClick: true
   } as any);
+
+  const triggerPicker = () => {
+    if (Capacitor.isNativePlatform()) {
+      handleNativeImagePick();
+    } else {
+      // Trigger hidden input click
+      const input = document.getElementById('profile-picture-input');
+      if (input) input.click();
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,49 +150,37 @@ const Profile: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="flex items-center gap-6 mb-8 pb-8 border-b border-border-polish relative">
             <div 
-              {...getRootProps({
-                onClick: (e) => {
-                  if (Capacitor.isNativePlatform()) {
-                    e.stopPropagation();
-                    handleNativeImagePick();
-                  }
-                }
-              })}
               className={cn(
                 "relative group cursor-pointer transition-all duration-300",
                 isDragActive && "scale-110"
               )}
+              onClick={() => setIsEditingPhoto(!isEditingPhoto)}
             >
-              <input {...getInputProps()} />
-              <div className={cn(
-                "w-20 h-20 rounded-full border-2 flex items-center justify-center text-3xl font-bold overflow-hidden shadow-inner transition-all",
-                isDragActive 
-                  ? "bg-primary/20 border-primary border-dashed" 
-                  : "bg-[#ebecf0] border-border-polish"
-              )}>
-                {(formData.photoURL && formData.photoURL.length > 0) ? (
-                   <img src={formData.photoURL} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  isDragActive ? <Upload className="w-8 h-8 text-primary animate-bounce" /> : profile.displayName?.charAt(0)
-                )}
-                
-                {/* Hover Overlay */}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-[10px] text-white transition-opacity font-bold uppercase tracking-tighter text-center px-2">
-                  <Upload className="w-4 h-4 mb-0.5" />
-                  {t('uploadPhoto')}
+              <div {...getRootProps()}>
+                <input {...getInputProps()} id="profile-picture-input" />
+                <div className={cn(
+                  "w-20 h-20 rounded-full border-2 flex items-center justify-center text-3xl font-bold overflow-hidden shadow-inner transition-all",
+                  isDragActive 
+                    ? "bg-primary/20 border-primary border-dashed" 
+                    : "bg-[#ebecf0] border-border-polish"
+                )}>
+                  {(formData.photoURL && formData.photoURL.length > 0) ? (
+                     <img src={formData.photoURL} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    isDragActive ? <Upload className="w-8 h-8 text-primary animate-bounce" /> : profile.displayName?.charAt(0)
+                  )}
+                  
+                  {/* Hover Overlay */}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-[10px] text-white transition-opacity font-bold uppercase tracking-tighter text-center px-2">
+                    <Upload className="w-4 h-4 mb-0.5" />
+                    {t('changePhoto')}
+                  </div>
                 </div>
               </div>
               
-              <button 
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsEditingPhoto(!isEditingPhoto);
-                }}
-                className="absolute -bottom-1 -right-1 bg-primary text-black p-1.5 rounded-full shadow-lg border border-white hover:scale-110 transition-transform z-20"
-              >
+              <div className="absolute -bottom-1 -right-1 bg-primary text-black p-1.5 rounded-full shadow-lg border border-white hover:scale-110 transition-transform z-20">
                 <ImageIcon className="w-3.5 h-3.5" />
-              </button>
+              </div>
             </div>
             
             <div className="flex-1">
@@ -213,31 +209,51 @@ const Profile: React.FC = () => {
 
             <AnimatePresence>
               {isEditingPhoto && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="absolute top-full left-0 right-0 z-10 mt-2 p-4 bg-white border border-border-polish shadow-xl rounded-xl space-y-3"
-                >
-                  <label className="text-[10px] font-black text-text-light uppercase tracking-widest block">{t('changePhoto')}</label>
-                  <p className="text-[10px] text-text-light italic">{t('ku') === 'ku' ? 'تۆ دەتوانی وێنەکە بگۆڕیت یان بیسڕیتەوە' : 'You can change the photo or clear it'}</p>
-                  <div className="flex gap-2">
+                <>
+                  <div 
+                    className="fixed inset-0 z-10 bg-black/5 flex items-center justify-center" 
+                    onClick={() => setIsEditingPhoto(false)}
+                  />
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                    className="absolute top-full ltr:left-0 rtl:right-0 z-20 mt-2 w-56 p-2 bg-white border border-border-polish shadow-2xl rounded-2xl space-y-1"
+                  >
                     <button 
                       type="button"
-                      onClick={() => setFormData({ ...formData, photoURL: '' })}
-                      className="border border-danger/20 text-danger px-3 py-1 text-xs font-bold rounded hover:bg-red-50"
+                      onClick={() => {
+                        setIsEditingPhoto(false);
+                        triggerPicker();
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-text-dark hover:bg-gray-50 rounded-xl transition-colors"
                     >
-                      {t('ku') === 'ku' ? 'سڕینەوەی وێنە' : 'Clear Photo'}
+                      <ImageIcon className="w-4 h-4 text-primary" />
+                      {t('uploadPhoto')}
                     </button>
+                    {(formData.photoURL && formData.photoURL.length > 0) && (
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setFormData({ ...formData, photoURL: '' });
+                          setIsEditingPhoto(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-danger hover:bg-red-50 rounded-xl transition-colors"
+                      >
+                        <ShieldAlert className="w-4 h-4" />
+                        {t('ku') === 'ku' ? 'سڕینەوەی وێنە' : 'Clear Photo'}
+                      </button>
+                    )}
+                    <div className="h-px bg-border-polish mx-2 my-1" />
                     <button 
                       type="button"
                       onClick={() => setIsEditingPhoto(false)}
-                      className="bg-primary text-black px-3 py-1 text-xs font-bold rounded flex-1"
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-text-light hover:bg-gray-50 rounded-xl transition-colors"
                     >
-                      {t('close')}
+                      {t('cancel')}
                     </button>
-                  </div>
-                </motion.div>
+                  </motion.div>
+                </>
               )}
             </AnimatePresence>
           </div>
