@@ -14,6 +14,8 @@ import { formatDate, cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../context/LanguageContext';
 import { GoogleGenAI } from "@google/genai";
+import { Capacitor } from '@capacitor/core';
+import { pickImage, convertWebPathToBase64 } from '../services/imageService';
 
 const ConversationPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -119,6 +121,23 @@ const ConversationPage: React.FC = () => {
   }, [isRecording]);
 
   const aiBotId = 'ai-test-bot';
+
+  const handleNativeImagePick = async () => {
+    if (Capacitor.isNativePlatform()) {
+      const paths = await pickImage(false);
+      if (paths.length > 0) {
+        setUploading(true);
+        try {
+          const base64 = await convertWebPathToBase64(paths[0]);
+          setSelectedImage(base64);
+        } catch (err) {
+          console.error('Native image pick failed', err);
+        } finally {
+          setUploading(false);
+        }
+      }
+    }
+  };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -498,11 +517,19 @@ const ConversationPage: React.FC = () => {
 
         <form onSubmit={handleSendMessage} className="flex gap-2 md:gap-4 items-end">
           <div className="flex gap-2 shrink-0">
-            <label className={cn(
-              "cursor-pointer p-3 md:p-4 bg-gray-50 border rounded-2xl hover:bg-gray-100 transition shadow-sm shrink-0",
-              uploading && "opacity-50 pointer-events-none"
-            )}>
-              <input type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+            <label 
+              onClick={(e) => {
+                if (Capacitor.isNativePlatform()) {
+                  e.preventDefault();
+                  handleNativeImagePick();
+                }
+              }}
+              className={cn(
+                "cursor-pointer p-3 md:p-4 bg-gray-50 border rounded-2xl hover:bg-gray-100 transition shadow-sm shrink-0",
+                uploading && "opacity-50 pointer-events-none"
+              )}
+            >
+              {!Capacitor.isNativePlatform() && <input type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />}
               {uploading ? <Loader2 className="w-5 h-5 md:w-6 md:h-6 text-indigo-500 animate-spin" /> : <ImageIcon className="w-5 h-5 md:w-6 md:h-6 text-gray-500" />}
             </label>
 

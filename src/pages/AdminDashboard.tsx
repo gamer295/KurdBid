@@ -11,6 +11,8 @@ import { useDropzone } from 'react-dropzone';
 import { formatDate, cn } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { Capacitor } from '@capacitor/core';
+import { pickImage, convertWebPathToBase64 } from '../services/imageService';
 
 const AdminDashboard: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -191,13 +193,32 @@ const AdminDashboard: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
+  const handleNativeImagePick = async () => {
+    if (Capacitor.isNativePlatform()) {
+      const paths = await pickImage(false);
+      if (paths.length > 0) {
+        setUploading(true);
+        try {
+          const base64 = await convertWebPathToBase64(paths[0]);
+          setAdImage(base64);
+          setAdMediaType('image');
+        } catch (err) {
+          console.error('Native image pick failed', err);
+        } finally {
+          setUploading(false);
+        }
+      }
+    }
+  };
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
       'image/*': [],
       'video/*': []
     },
-    multiple: false
+    multiple: false,
+    noClick: Capacitor.isNativePlatform()
   } as any);
 
   const toggleAdStatus = async (adId: string, currentStatus: boolean) => {
@@ -673,6 +694,11 @@ const AdminDashboard: React.FC = () => {
                 ) : (
                   <div 
                     {...getRootProps()} 
+                    onClick={() => {
+                      if (Capacitor.isNativePlatform()) {
+                        handleNativeImagePick();
+                      }
+                    }}
                     className={cn(
                       "border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center gap-3 transition-colors cursor-pointer",
                       isDragActive ? "border-primary bg-primary/5" : "border-gray-200 hover:border-primary hover:bg-gray-50"

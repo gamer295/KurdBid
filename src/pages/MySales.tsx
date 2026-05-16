@@ -9,6 +9,8 @@ import ItemCard from '../components/ItemCard';
 
 import { useDropzone } from 'react-dropzone';
 import { useLanguage } from '../context/LanguageContext';
+import { Capacitor } from '@capacitor/core';
+import { pickImage, convertWebPathToBase64 } from '../services/imageService';
 
 const MySales: React.FC = () => {
   const { user, isAdmin } = useAuth();
@@ -130,11 +132,38 @@ const MySales: React.FC = () => {
     }
   };
 
+  const handleNativeImagePick = async () => {
+    if (Capacitor.isNativePlatform()) {
+      if (images.length >= 4) return;
+      const remaining = 4 - images.length;
+      const paths = await pickImage(remaining > 1);
+      
+      if (paths.length > 0) {
+        setProcessingImages(true);
+        try {
+          const base64Images = await Promise.all(
+            paths.map(path => convertWebPathToBase64(path).catch(err => {
+              console.error(err);
+              return null;
+            }))
+          );
+          const filtered = base64Images.filter((img): img is string => img !== null);
+          setImages(prev => [...prev, ...filtered]);
+        } catch (err) {
+          console.error('Native image pick failed', err);
+        } finally {
+          setProcessingImages(false);
+        }
+      }
+    }
+  };
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { 'image/*': [] },
     maxFiles: 4,
-    disabled: images.length >= 4
+    disabled: images.length >= 4,
+    noClick: Capacitor.isNativePlatform()
   } as any);
 
   const removeImage = (index: number) => {
@@ -411,6 +440,11 @@ const MySales: React.FC = () => {
                   
                   <div 
                     {...getRootProps()} 
+                    onClick={() => {
+                      if (Capacitor.isNativePlatform()) {
+                        handleNativeImagePick();
+                      }
+                    }}
                     className={cn(
                       "border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer",
                       isDragActive ? "border-primary bg-primary/5" : "border-border-polish bg-bg-polish",

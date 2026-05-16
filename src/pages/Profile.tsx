@@ -6,6 +6,8 @@ import { cn } from '../lib/utils';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useDropzone } from 'react-dropzone';
+import { Capacitor } from '@capacitor/core';
+import { pickImage, convertWebPathToBase64 } from '../services/imageService';
 
 import { useLanguage } from '../context/LanguageContext';
 
@@ -54,12 +56,31 @@ const Profile: React.FC = () => {
     reader.readAsDataURL(file);
   }, [t]);
 
+  const handleNativeImagePick = async () => {
+    if (Capacitor.isNativePlatform()) {
+      const paths = await pickImage(false);
+      if (paths.length > 0) {
+        setLoading(true);
+        try {
+          const base64 = await convertWebPathToBase64(paths[0]);
+          setFormData(prev => ({ ...prev, photoURL: base64 }));
+          setIsEditingPhoto(true);
+        } catch (err) {
+          console.error('Native image conversion failed', err);
+        } finally {
+          setLoading(false);
+        }
+      }
+    }
+  };
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
       'image/*': ['.jpeg', '.jpg', '.png', '.webp']
     },
-    multiple: false
+    multiple: false,
+    noClick: Capacitor.isNativePlatform()
   } as any);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -120,6 +141,11 @@ const Profile: React.FC = () => {
           <div className="flex items-center gap-6 mb-8 pb-8 border-b border-border-polish relative">
             <div 
               {...getRootProps()}
+              onClick={() => {
+                if (Capacitor.isNativePlatform()) {
+                  handleNativeImagePick();
+                }
+              }}
               className={cn(
                 "relative group cursor-pointer transition-all duration-300",
                 isDragActive && "scale-110"
