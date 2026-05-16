@@ -405,27 +405,36 @@ const ItemPage: React.FC = () => {
               </div>
 
               {user && user.uid !== item.sellerId && (
-                <button
-                  onClick={() => isFollowing(item.sellerId) ? unfollowUser(item.sellerId) : followUser(item.sellerId)}
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95",
-                    isFollowing(item.sellerId)
-                      ? "bg-gray-100 text-text-light border border-border-polish"
-                      : "bg-primary text-black"
-                  )}
-                >
-                  {isFollowing(item.sellerId) ? (
-                    <>
-                      <UserCheck className="w-3.5 h-3.5" />
-                      {t('following')}
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="w-3.5 h-3.5" />
-                      {t('follow')}
-                    </>
-                  )}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleMessageSeller}
+                    className="p-2.5 rounded-full bg-white border border-border-polish text-indigo-600 hover:bg-indigo-50 transition-all active:scale-95 shadow-sm"
+                    title={t('contactSeller')}
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => isFollowing(item.sellerId) ? unfollowUser(item.sellerId) : followUser(item.sellerId)}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95",
+                      isFollowing(item.sellerId)
+                        ? "bg-gray-100 text-text-light border border-border-polish"
+                        : "bg-primary text-black"
+                    )}
+                  >
+                    {isFollowing(item.sellerId) ? (
+                      <>
+                        <UserCheck className="w-3.5 h-3.5" />
+                        {t('following')}
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="w-3.5 h-3.5" />
+                        {t('follow')}
+                      </>
+                    )}
+                  </button>
+                </div>
               )}
             </div>
 
@@ -494,14 +503,17 @@ const ItemPage: React.FC = () => {
                   </div>
                 )}
                 
-                {!item.isAuction && (
-                  <button
-                    onClick={handleMessageSeller}
-                    className="btn-polish btn-polish-primary w-full py-4 text-sm uppercase tracking-wider font-bold h-[56px]"
-                  >
-                    {t('contactSeller')}
-                  </button>
-                )}
+                <button
+                  onClick={handleMessageSeller}
+                  className={cn(
+                    "w-full py-4 text-sm uppercase tracking-wider font-bold h-[56px] rounded-[4px] transition-all",
+                    item.isAuction 
+                      ? "bg-white border border-border-polish text-text-dark hover:bg-gray-50" 
+                      : "btn-polish btn-polish-primary"
+                  )}
+                >
+                  {t('contactSeller')}
+                </button>
                 {sellerProfile?.phone && (
                   <a
                     href={`tel:${sellerProfile.phone}`}
