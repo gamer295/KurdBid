@@ -5,18 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>KurdBid | Marketplace</title>
     
-    <!-- GitHub Pages Redirector for Root Hosting -->
+    <!-- GitHub Pages Redirector -->
     <script type="text/javascript">
-      (function() {
-        var isGitHubPages = window.location.hostname.includes('github.io');
-        var isRoot = window.location.pathname === '/' || window.location.pathname.split('/').pop() === '';
-        // If we are on GH Pages and at root, redirect to docs/ where the build is
-        if (isGitHubPages && isRoot && !window.location.search.includes('v=')) {
-          var path = window.location.pathname;
-          if (!path.endsWith('/')) path += '/';
-          window.location.href = path + 'docs/index.html';
+      // Simple redirect for GitHub Pages if build is in docs/
+      if (window.location.pathname.split('/').pop() === '' || window.location.pathname.split('/').pop() === 'index.html') {
+        if (!window.location.port && !window.location.hostname.includes('run.app')) {
+          window.location.href = './docs/index.html';
         }
-      })();
+      }
     </script>
 
     <link rel="manifest" href="manifest.json" />
